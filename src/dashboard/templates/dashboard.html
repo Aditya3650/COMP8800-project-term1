@@ -56,7 +56,7 @@
         </thead>
         <tbody>
         {% for r in rows %}
-          <tr>
+          <tr style="font-weight: {{ '700' if r.flag else '400' }};">
             <td class="muted">{{ r.time }}</td>
             <td><span class="tag">{{ r.log_type }}</span></td>
             <td>{{ r.event_id }}</td>
