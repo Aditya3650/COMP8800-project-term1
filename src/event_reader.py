@@ -1,4 +1,4 @@
-import win32evtlog  # pip install pywin32
+import win32evtlog  
 import json
 
 def read_and_save_with_metadata(server="localhost", log_type="System", num_records=100):
@@ -19,7 +19,7 @@ def read_and_save_with_metadata(server="localhost", log_type="System", num_recor
             if not batch:
                 break
             for event in batch:
-                # Convert inserts (can be None) to a list for JSON safety
+               
                 inserts = list(event.StringInserts) if event.StringInserts else []
 
                 logs.append({
@@ -35,10 +35,10 @@ def read_and_save_with_metadata(server="localhost", log_type="System", num_recor
                 if count >= num_records:
                     break
 
-        # Build metadata using the collected (subset) logs
+       
         if logs:
-            newest_time = logs[0]["Time"]      # because we read newest first
-            oldest_time = logs[-1]["Time"]     # last one is the oldest in this saved set
+            newest_time = logs[0]["Time"]     
+            oldest_time = logs[-1]["Time"]   
         else:
             newest_time = "N/A"
             oldest_time = "N/A"
@@ -73,7 +73,7 @@ def read_and_save_with_metadata(server="localhost", log_type="System", num_recor
 
 
 if __name__ == "__main__":
-    # Adjust num_records as you like
+  
     read_and_save_with_metadata(log_type="System", num_records=100)
     read_and_save_with_metadata(log_type="Security", num_records=100)
     read_and_save_with_metadata(log_type="Application", num_records=100)

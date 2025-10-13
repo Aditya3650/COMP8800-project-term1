@@ -1,5 +1,5 @@
 # src/collector_to_sqlite.py
-import win32evtlog  # pip install pywin32
+import win32evtlog  
 from shared.storage import insert_events
 from datetime import datetime
 
@@ -31,7 +31,7 @@ def read_latest(server="localhost", log_type="System", num_records=200):
     return out
 
 if __name__ == "__main__":
-    # You can adjust counts; run elevated to capture Security.
+  
     for lt in ("System", "Security", "Application"):
         try:
             events = read_latest(log_type=lt, num_records=500)

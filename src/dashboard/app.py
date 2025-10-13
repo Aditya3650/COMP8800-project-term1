@@ -22,7 +22,7 @@ def dashboard(request: Request, limit: int = Query(50), log: str | None = None, 
     stats, total = fetch_stats()
     rows = fetch_latest(limit=limit, log_types=logs, event_id=event_id)
 
-    # Highlight some interesting EventIDs
+
     interesting = {4625, 4672, 7045, 1102}
     for r in rows:
         r["flag"] = (r["event_id"] in interesting)
