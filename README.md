@@ -1,5 +1,5 @@
 # Real-Time Windows Event Log Analysis Engine
-
+Github link: https://github.com/Aditya3650/COMP8800-project-term1
 ## 📘 Project Overview
 This project is part of **COMP 8800 – Major Project 1** at  **British Columbia Institute of Technology (BCIT)**.  
 The goal is to develop a **Real-Time Windows Event Log Analysis Engine** that collects, stores, and analyzes Windows Event Logs to detect unusual or suspicious system activity.
