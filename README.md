@@ -63,3 +63,12 @@ python collector_to_sqlite.py
 uvicorn dashboard.app:app --reload
 ```
 Then open your browser at http://127.0.0.1:8000
+
+
+
+## 🧾 Author
+
+Aditya Singh Attri  
+Bachelor of Science in Applied Computer Science  
+British Columbia Institute of Technology (BCIT)  
+Email: aditya3650@yahoo.co.in  
