@@ -14,6 +14,13 @@
     th, td { padding: 8px 10px; border-bottom: 1px solid #22222a; vertical-align: top; }
     th { text-align: left; color:#cfcfe6; position: sticky; top:0; background:#15151a; }
     .tag { background:#222230; padding: 2px 8px; border-radius:999px; font-size: 12px; color:#cfcfe6; }
+    .chev { display:inline-block; transition: transform .15s ease; margin-right:6px; }
+    tr.expanded .chev { transform: rotate(90deg); }
+    .pill { padding:2px 8px; border-radius:999px; background:#1e1e2a; color:#cfcfe6; font-size: 12px; }
+    .triage { white-space: pre-wrap; background:#101016; padding:12px; border-radius:10px; border:1px solid #242438; }
+    .details { color:#cfcfe6; margin-bottom:8px; }
+    .dim { color:#9a9ab3; }
+    .rowscroller { max-height:60vh; overflow:auto; }
   </style>
 </head>
 <body>
@@ -42,20 +49,31 @@
       <h2 style="margin:0;">Latest Events (Top 50)</h2>
       <a href="/api/events" class="muted">View raw JSON →</a>
     </div>
-    <div style="max-height:60vh; overflow:auto;">
-      <table>
+
+    <div class="rowscroller">
+      <table id="events-table">
         <thead>
           <tr>
+            <th style="width:36px;"></th>
             <th>Time</th>
             <th>Log</th>
             <th>EventID</th>
             <th>Source</th>
-            <th>Message (preview)</th>
+            <th class="dim">Message (preview)</th>
           </tr>
         </thead>
         <tbody>
         {% for r in rows %}
-          <tr style="font-weight: {{ '700' if r.flag else '400' }};">
+          <tr class="row"
+              data-payload='{{ {
+                "log_type": r.log_type,
+                "time": r.time,
+                "event_id": r.event_id,
+                "source": r.source,
+                "message": r.message
+              } | tojson }}'
+              style="font-weight: {{ '700' if r.flag else '400' }};">
+            <td class="muted"><span class="chev">▶</span></td>
             <td class="muted">{{ r.time }}</td>
             <td><span class="tag">{{ r.log_type }}</span></td>
             <td>{{ r.event_id }}</td>
@@ -68,10 +86,78 @@
               {% endif %}
             </td>
           </tr>
+          <tr class="row-details" style="display:none;">
+            <td></td>
+            <td colspan="5">
+              <div class="details">
+                <span class="pill">{{ r.log_type }}</span>
+                <span class="pill">EventID {{ r.event_id }}</span>
+                <span class="pill">{{ r.source }}</span>
+                <span class="pill dim">{{ r.time }}</span>
+              </div>
+              <div class="muted" style="margin:6px 0 8px;">Message</div>
+              <div class="triage" id="msg-{{ loop.index }}">Loading message…</div>
+              <div class="muted" style="margin:12px 0 6px;">LLM Triage</div>
+              <div class="triage" id="triage-{{ loop.index }}">Click the row to generate…</div>
+            </td>
+          </tr>
         {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
+
+  <script>
+    // Expand/collapse rows and fetch LLM triage on first click
+    const rows = Array.from(document.querySelectorAll('tr.row'));
+    rows.forEach((row, idx) => {
+      row.addEventListener('click', async () => {
+        const details = row.nextElementSibling;
+        const chev = row.querySelector('.chev');
+        const i = idx + 1; // loop.index is 1-based in Jinja
+
+        const wasOpen = details.style.display !== 'none';
+        document.querySelectorAll('tr.row-details').forEach(r => r.style.display = 'none');
+        document.querySelectorAll('tr.row').forEach(r => r.classList.remove('expanded'));
+
+        if (!wasOpen) {
+          details.style.display = '';
+          row.classList.add('expanded');
+
+          // Fill message text
+          const payload = JSON.parse(row.dataset.payload);
+          const msgDiv = document.getElementById('msg-' + i);
+          msgDiv.textContent = (payload.message && payload.message.length)
+            ? payload.message.join(' | ')
+            : '—';
+
+          // Triage fetch (only if not already filled)
+          const triDiv = document.getElementById('triage-' + i);
+          if (!triDiv.dataset.loaded) {
+            triDiv.textContent = 'Generating…';
+            try {
+              const res = await fetch('/api/triage', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+              });
+              const data = await res.json();
+              if (data.output) {
+                triDiv.textContent = data.output;
+                triDiv.dataset.loaded = '1';
+              } else {
+                triDiv.textContent = data.error || 'No response';
+              }
+            } catch (e) {
+              triDiv.textContent = 'Error: ' + e;
+            }
+          }
+        }
+      });
+    });
+
+    // Initialize details rows as hidden
+    document.querySelectorAll('tr.row-details').forEach(r => r.style.display = 'none');
+  </script>
 </body>
 </html>

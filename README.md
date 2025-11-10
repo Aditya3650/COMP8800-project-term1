@@ -54,6 +54,11 @@ This project focuses on the **Windows OS** for Term 1 and will extend to **Linux
 
 ## 💻 How to Run
 
+### 0. **Install dependencies**
+```bash
+pip install fastapi uvicorn transformers peft torch
+```
+
 ### 1. **Run the Collector**
 ```bash
 python collector_to_sqlite.py

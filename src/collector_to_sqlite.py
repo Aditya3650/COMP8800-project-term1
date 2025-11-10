@@ -1,6 +1,6 @@
 # src/collector_to_sqlite.py
 import win32evtlog  
-from shared.storage import insert_events
+from src.shared.storage import insert_events
 from datetime import datetime
 
 def read_latest(server="localhost", log_type="System", num_records=200):
