@@ -98,7 +98,7 @@
               <div class="muted" style="margin:6px 0 8px;">Message</div>
               <div class="triage" id="msg-{{ loop.index }}">Loading message…</div>
               <div class="muted" style="margin:12px 0 6px;">LLM Triage</div>
-              <div class="triage" id="triage-{{ loop.index }}">Click the row to generate…</div>
+              <div class="triage" id="triage-{{ loop.index }}" style="white-space: prewrap;">Click the row to generate…</div>
             </td>
           </tr>
         {% endfor %}
@@ -107,57 +107,74 @@
     </div>
   </div>
 
-  <script>
-    // Expand/collapse rows and fetch LLM triage on first click
-    const rows = Array.from(document.querySelectorAll('tr.row'));
-    rows.forEach((row, idx) => {
-      row.addEventListener('click', async () => {
-        const details = row.nextElementSibling;
-        const chev = row.querySelector('.chev');
-        const i = idx + 1; // loop.index is 1-based in Jinja
+<script>
+  async function fetchWithTimeout(url, options = {}, ms = 180000) {  // 180 seconds
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    try { return await fetch(url, { ...options, signal: ctrl.signal }); }
+    finally { clearTimeout(t); }
+  }
 
-        const wasOpen = details.style.display !== 'none';
-        document.querySelectorAll('tr.row-details').forEach(r => r.style.display = 'none');
-        document.querySelectorAll('tr.row').forEach(r => r.classList.remove('expanded'));
+  // Add a tiny health button at top (optional)
+  (function addHealthButton(){
+    const h2 = document.querySelector('h2');
+    const b = document.createElement('button');
+    b.textContent = 'LLM Health';
+    b.style.cssText = 'margin-left:8px;background:#222230;color:#cfcfe6;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;';
+    b.onclick = async () => {
+      b.textContent = 'Checking...';
+      try {
+        const r = await fetch('/api/triage/_health');
+        const j = await r.json();
+        alert(JSON.stringify(j, null, 2));
+      } catch (e) { alert('Health error: ' + e); }
+      b.textContent = 'LLM Health';
+    };
+    h2.appendChild(b);
+  })();
 
-        if (!wasOpen) {
-          details.style.display = '';
-          row.classList.add('expanded');
+  const rows = Array.from(document.querySelectorAll('tr.row'));
+  rows.forEach((row, idx) => {
+    row.addEventListener('click', async () => {
+      const details = row.nextElementSibling;
+      const wasOpen = details.style.display !== 'none';
+      document.querySelectorAll('tr.row-details').forEach(r => r.style.display = 'none');
+      document.querySelectorAll('tr.row').forEach(r => r.classList.remove('expanded'));
+      if (wasOpen) return;
 
-          // Fill message text
-          const payload = JSON.parse(row.dataset.payload);
-          const msgDiv = document.getElementById('msg-' + i);
-          msgDiv.textContent = (payload.message && payload.message.length)
-            ? payload.message.join(' | ')
-            : '—';
+      details.style.display = '';
+      row.classList.add('expanded');
 
-          // Triage fetch (only if not already filled)
-          const triDiv = document.getElementById('triage-' + i);
-          if (!triDiv.dataset.loaded) {
-            triDiv.textContent = 'Generating…';
-            try {
-              const res = await fetch('/api/triage', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-              });
-              const data = await res.json();
-              if (data.output) {
-                triDiv.textContent = data.output;
-                triDiv.dataset.loaded = '1';
-              } else {
-                triDiv.textContent = data.error || 'No response';
-              }
-            } catch (e) {
-              triDiv.textContent = 'Error: ' + e;
-            }
-          }
+      const i = idx + 1;
+      const payload = JSON.parse(row.dataset.payload);
+      const msgDiv = document.getElementById('msg-' + i);
+      msgDiv.textContent = (payload.message && payload.message.length)
+        ? payload.message.join(' | ')
+        : '—';
+
+      const triDiv = document.getElementById('triage-' + i);
+      if (triDiv.dataset.loaded) return;
+
+      triDiv.textContent = 'Generating…';
+      try {
+        const res = await fetchWithTimeout('/api/triage', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.output) {
+          triDiv.textContent = data.output;
+          triDiv.dataset.loaded = '1';
+        } else {
+          triDiv.textContent = data.error || 'No response';
         }
-      });
+      } catch (e) {
+        triDiv.textContent = 'Request failed or timed out: ' + e;
+      }
     });
+  });
+</script>
 
-    // Initialize details rows as hidden
-    document.querySelectorAll('tr.row-details').forEach(r => r.style.display = 'none');
-  </script>
 </body>
 </html>

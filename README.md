@@ -50,6 +50,9 @@ This project focuses on the **Windows OS** for Term 1 and will extend to **Linux
 - Displays recent logs with filtering options.  
 - Shows basic statistics like total log count and top event types.
 
+✅ **LLM Trained and Deployed**
+- LLM trained from kaggle.com (https://www.kaggle.com/code/aditya3650/llm-training/edit/run/274956747)  
+- Simplifies and explains messages in layman terms
 ---
 
 ## 💻 How to Run
@@ -60,12 +63,14 @@ pip install fastapi uvicorn transformers peft torch
 ```
 
 ### 1. **Run the Collector**
+i ran this in cmd in src directory with admin privilege to also get security logs
 ```bash
 python collector_to_sqlite.py
 ```
 ### 2. **Start the Dashboard**
+run this in terminal
 ```bash
-uvicorn dashboard.app:app --reload
+python -m uvicorn src.dashboard.app:app --reload
 ```
 Then open your browser at http://127.0.0.1:8000
 
